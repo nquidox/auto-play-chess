@@ -4,6 +4,7 @@ import pygame as pg
 WIDTH = 1000
 HEIGHT = 700
 RES = WIDTH, HEIGHT
+TICK_RATE = 1
 
 pg.init()
 screen = pg.display.set_mode(RES)
@@ -27,26 +28,16 @@ board_size = (square_size * 8)
 inner_size = board_size + ib * 2
 text_area_size = inner_size + ta * 2
 outer_size = text_area_size + ob * 2
-bs = s_pos + inner_size         # board shift
 
 
 class Figure(object):
-    def __init__(self, name, icon, pos, value, board):
+    def __init__(self, name, pos, value, board):
         self.name = name
-        self.icon = icon
         self.pos = list(pos)
         self.value = value
+
+        # autorun methods
         self.put_on_board(board)
-
-    def draw_icon(self):
-        link = "figures/" + self.icon
-        pos = [self.pos[1], self.pos[0]]
-
-        for i in range(len(pos)):
-            pos[i] = (pos[i] * square_size) + s_pos + ob + ta + ib
-
-        img = pg.image.load(link)
-        screen.blit(img, pos)
 
     def put_on_board(self, board):
         x = self.pos[0]
@@ -55,7 +46,24 @@ class Figure(object):
             if board[i][0] == x and board[i][1] == y:
                 board[i][3] = self.name
 
-    def move(self):
+    def move(self, board):
+        col = self.name.split("_")[0]
+        fig = self.name.split("_")[1]
+        ln = len(board)
+        elem = 0
+        for i in range(ln):
+            if board[i][3] == self.name:
+                elem = i
+
+        # pawn movement
+        if fig == "pawn":
+            if col == "w":
+                move = 1
+                if board[elem][0] >= 0:
+                    board[elem][3] = "none"
+                    for i in range(ln):
+                        if (board[i][0] == board[elem][0] - move) and (board[i][1] == board[elem][1]):
+                            board[i][3] = self.name
         pass
 
     def check_threat(self):
@@ -146,64 +154,114 @@ def draw_board(board):
         screen.blit(img, (numbers_right, numbers_start_y + shift))
         shift += square_size
 
+    # draw figures
+    ln = len(board)
 
-def draw_figures(figure):
-    font = pg.font.SysFont("SourceCodePro-SemiBold.ttf", 40)
-    img = font.render(figure.icon, True, (colors["black"]))
-    screen.blit(img, (40, 40))
-    pass
+    for i in range(ln):
+        if board[i][3] == "none":
+            continue
+        else:
+            color = board[i][3].split("_")[0]
+            figure = board[i][3].split("_")[1]
+
+        icon = ""
+        if color == "w":
+            if figure == "pawn":
+                icon = "wpawn.png"
+
+            elif figure == "rook":
+                icon = "wrook.png"
+
+            elif figure == "knight":
+                icon = "wknight.png"
+
+            elif figure == "bishop":
+                icon = "wbishop.png"
+
+            elif figure == "queen":
+                icon = "wqueen.png"
+
+            elif figure == "king":
+                icon = "wking.png"
+        else:
+            if figure == "pawn":
+                icon = "bpawn.png"
+
+            elif figure == "rook":
+                icon = "brook.png"
+
+            elif figure == "knight":
+                icon = "bknight.png"
+
+            elif figure == "bishop":
+                icon = "bbishop.png"
+
+            elif figure == "queen":
+                icon = "bqueen.png"
+
+            elif figure == "king":
+                icon = "bking.png"
+
+        link = "figures/" + icon
+        pos = [board[i][1], board[i][0]]
+
+        for j in range(len(pos)):
+            pos[j] = (pos[j] * square_size) + s_pos + ob + ta + ib
+
+        img = pg.image.load(link)
+        screen.blit(img, pos)
 
 
 def make_white_figures(board):
     figs = []
     # first row
-    w_king = Figure("w_king", "wking.png", [7, 4], 6, board)
+    w_king = Figure("w_king", [7, 4], 6, board)
     figs.append(w_king)
 
-    w_queen = Figure("w_queen", "wqueen.png", [7, 3], 5, board)
+    w_queen = Figure("w_queen", [7, 3], 5, board)
     figs.append(w_queen)
 
-    w_bishop1 = Figure("w_bishop1", "wbishop.png", [7, 2], 4, board)
+    w_bishop1 = Figure("w_bishop_1", [7, 2], 4, board)
     figs.append(w_bishop1)
 
-    w_bishop2 = Figure("w_bishop2", "wbishop.png", [7, 5], 4, board)
+    w_bishop2 = Figure("w_bishop_2", [7, 5], 4, board)
     figs.append(w_bishop2)
 
-    w_knight1 = Figure("w_knight1", "wknight.png", [7, 1], 4, board)
+    w_knight1 = Figure("w_knight_1", [7, 1], 4, board)
     figs.append(w_knight1)
 
-    w_knight2 = Figure("w_knight2", "wknight.png", [7, 6], 4, board)
+    w_knight2 = Figure("w_knight_2", [7, 6], 4, board)
     figs.append(w_knight2)
 
-    w_rook1 = Figure("w_rook1", "wrook.png", [7, 0], 4, board)
+    w_rook1 = Figure("w_rook_1", [7, 0], 4, board)
     figs.append(w_rook1)
 
-    w_rook2 = Figure("w_rook2", "wrook.png", [7, 7], 4, board)
+    w_rook2 = Figure("w_rook_2", [7, 7], 4, board)
     figs.append(w_rook2)
 
     # pawns row
-    w_pawn1 = Figure("w_pawn1", "wpawn.png", [6, 0], 1, board)
+    w_pawn1 = Figure("w_pawn_1", [6, 0], 1, board)
     figs.append(w_pawn1)
 
-    w_pawn2 = Figure("w_pawn2", "wpawn.png", [6, 1], 1, board)
+    w_pawn2 = Figure("w_pawn_2", [6, 1], 1, board)
     figs.append(w_pawn2)
 
-    w_pawn3 = Figure("w_pawn3", "wpawn.png", [6, 2], 1, board)
+    w_pawn3 = Figure("w_pawn_3", [6, 2], 1, board)
     figs.append(w_pawn3)
 
-    w_pawn4 = Figure("w_pawn4", "wpawn.png", [6, 3], 1, board)
+    w_pawn4 = Figure("w_pawn_4", [6, 3], 1, board)
     figs.append(w_pawn4)
 
-    w_pawn5 = Figure("w_pawn5", "wpawn.png", [6, 4], 1, board)
+    w_pawn5 = Figure("w_pawn_5", [6, 4], 1, board)
     figs.append(w_pawn5)
 
-    w_pawn6 = Figure("w_pawn6", "wpawn.png", [6, 5], 1, board)
+    w_pawn6 = Figure("w_pawn_6", [6, 5], 1, board)
     figs.append(w_pawn6)
 
-    w_pawn7 = Figure("w_pawn7", "wpawn.png", [6, 6], 1, board)
+    w_pawn7 = Figure("w_pawn_7", [6, 6], 1, board)
     figs.append(w_pawn7)
 
-    w_pawn8 = Figure("w_pawn8", "wpawn.png", [6, 7], 1, board)
+    w_pawn8 = Figure("w_pawn_8", [6, 7], 1, board)
     figs.append(w_pawn8)
 
     return figs
@@ -212,53 +270,53 @@ def make_white_figures(board):
 def make_black_figures(board):
     figs = []
     # first row
-    b_king = Figure("b_king", "bking.png", [0, 4], 6, board)
+    b_king = Figure("b_king", [0, 4], 6, board)
     figs.append(b_king)
 
-    b_queen = Figure("b_queen", "bqueen.png", [0, 3], 5, board)
+    b_queen = Figure("b_queen", [0, 3], 5, board)
     figs.append(b_queen)
 
-    b_bishop1 = Figure("b_bishop1", "bbishop.png", [0, 2], 4, board)
+    b_bishop1 = Figure("b_bishop_1", [0, 2], 4, board)
     figs.append(b_bishop1)
 
-    b_bishop2 = Figure("b_bishop2", "bbishop.png", [0, 5], 4, board)
+    b_bishop2 = Figure("b_bishop_2", [0, 5], 4, board)
     figs.append(b_bishop2)
 
-    b_knight1 = Figure("b_knight1", "bknight.png", [0, 1], 4, board)
+    b_knight1 = Figure("b_knight_1", [0, 1], 4, board)
     figs.append(b_knight1)
 
-    b_knight2 = Figure("b_knight2", "bknight.png", [0, 6], 4, board)
+    b_knight2 = Figure("b_knight_2", [0, 6], 4, board)
     figs.append(b_knight2)
 
-    b_rook1 = Figure("b_rook1", "brook.png", [0, 0], 4, board)
+    b_rook1 = Figure("b_rook_1", [0, 0], 4, board)
     figs.append(b_rook1)
 
-    b_rook2 = Figure("b_rook2", "brook.png", [0, 7], 4, board)
+    b_rook2 = Figure("b_rook_2", [0, 7], 4, board)
     figs.append(b_rook2)
 
     # pawns row
-    b_pawn1 = Figure("b_pawn1", "bpawn.png", [1, 0], 1, board)
+    b_pawn1 = Figure("b_pawn_1", [1, 0], 1, board)
     figs.append(b_pawn1)
 
-    b_pawn2 = Figure("b_pawn2", "bpawn.png", [1, 1], 1, board)
+    b_pawn2 = Figure("b_pawn_2", [1, 1], 1, board)
     figs.append(b_pawn2)
 
-    b_pawn3 = Figure("b_pawn3", "bpawn.png", [1, 2], 1, board)
+    b_pawn3 = Figure("b_pawn_3", [1, 2], 1, board)
     figs.append(b_pawn3)
 
-    b_pawn4 = Figure("b_pawn4", "bpawn.png", [1, 3], 1, board)
+    b_pawn4 = Figure("b_pawn_4", [1, 3], 1, board)
     figs.append(b_pawn4)
 
-    b_pawn5 = Figure("b_pawn5", "bpawn.png", [1, 4], 1, board)
+    b_pawn5 = Figure("b_pawn_5", [1, 4], 1, board)
     figs.append(b_pawn5)
 
-    b_pawn6 = Figure("b_pawn6", "bpawn.png", [1, 5], 1, board)
+    b_pawn6 = Figure("b_pawn_6", [1, 5], 1, board)
     figs.append(b_pawn6)
 
-    b_pawn7 = Figure("b_pawn7", "bpawn.png", [1, 6], 1, board)
+    b_pawn7 = Figure("b_pawn_7", [1, 6], 1, board)
     figs.append(b_pawn7)
 
-    b_pawn8 = Figure("b_pawn8", "bpawn.png", [1, 7], 1, board)
+    b_pawn8 = Figure("b_pawn_8", [1, 7], 1, board)
     figs.append(b_pawn8)
 
     return figs
@@ -272,22 +330,15 @@ def main():
     w_figures = make_white_figures(board)
     b_figures = make_black_figures(board)
 
-    print(board)
-
     while True:
         [exit() for i in pg.event.get() if i.type == pg.QUIT]
-
         draw_board(board)
 
-        for figure in w_figures:
-            figure.draw_icon()
-
-        for figure in b_figures:
-            figure.draw_icon()
+        w_figures[12].move(board)
 
         # keep at the end
         pg.display.flip()
-        clock.tick(60)
+        clock.tick(TICK_RATE)
 
 
 if __name__ == '__main__':
