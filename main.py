@@ -1,10 +1,11 @@
 import pygame as pg
+import random
 
 # window params & init
 WIDTH = 1000
 HEIGHT = 700
 RES = WIDTH, HEIGHT
-TICK_RATE = 1
+TICK_RATE = 2
 
 pg.init()
 screen = pg.display.set_mode(RES)
@@ -29,12 +30,13 @@ inner_size = board_size + ib * 2
 text_area_size = inner_size + ta * 2
 outer_size = text_area_size + ob * 2
 
+values = {"king": 9, "queen": 7, "bishop": 2, "knight": 2, "rook": 2, "pawn": 1}
+
 
 class Figure(object):
-    def __init__(self, name, pos, value, board):
+    def __init__(self, name, pos, board):
         self.name = name
         self.pos = list(pos)
-        self.value = value
 
         # autorun methods
         self.put_on_board(board)
@@ -47,27 +49,74 @@ class Figure(object):
                 board[i][3] = self.name
 
     def move(self, board):
+        # getting self color, figure type and position
         col = self.name.split("_")[0]
         fig = self.name.split("_")[1]
         ln = len(board)
-        elem = 0
+        current = 0
         for i in range(ln):
             if board[i][3] == self.name:
-                elem = i
+                current = i
 
-        # pawn movement
+        # pawns move and attack
         if fig == "pawn":
+            pawn_move_list = []
+            pawn_attack_list = []
             if col == "w":
-                move = 1
-                if board[elem][0] >= 0:
-                    board[elem][3] = "none"
-                    for i in range(ln):
-                        if (board[i][0] == board[elem][0] - move) and (board[i][1] == board[elem][1]):
-                            board[i][3] = self.name
-        pass
+                p_move = -1
+            else:
+                p_move = 1
 
-    def check_threat(self):
-        pass
+            for j in range(ln):
+                if board[j][0] == board[current][0] + p_move:
+                    if board[j][1] == board[current][1]:
+                        pawn_move_list.append(j)
+
+                    elif board[j][1] - 1 == board[current][1] or board[j][1] + 1 == board[current][1]:
+                        pawn_attack_list.append(j)
+
+            # create move and attack list
+            for item in pawn_move_list:
+
+                # if all fields are empty
+                if board[item][3] == "none":
+                    if board[item][1] == board[current][1]:
+                        board[current][3] = "none"
+                        board[item][3] = self.name
+
+                # if any field has enemy figure
+                elif board[item][3] != "none" and board[item][3].split("_")[0] != col:
+                    target = self.choose_target(pawn_attack_list, board)
+                    board[current][3] = "none"
+                    board[target][3] = self.name
+
+        # other figs go here
+
+    def choose_target(self, moves, board):
+        threat_list = []
+        new_list = []
+        highest = 0
+
+        for move in moves:
+            name = board[move][3]
+            if name != "none":
+                fig = name.split("_")[1]
+                value = values[fig]
+                threat_list.append([move, value])
+                if value >= highest:
+                    highest = value
+
+        for item in threat_list:
+            if item[1] >= highest:
+                new_list.append(item[0])
+
+        quant = len(threat_list)
+        if quant > 1:
+            rand = random.randrange(0, quant - 1)
+            return new_list[rand]
+
+        else:
+            return new_list[0]  # FIX THIS | sometimes the list is empty
 
 
 def make_board():
@@ -215,53 +264,53 @@ def draw_board(board):
 def make_white_figures(board):
     figs = []
     # first row
-    w_king = Figure("w_king", [7, 4], 6, board)
+    w_king = Figure("w_king", [7, 4], board)
     figs.append(w_king)
 
-    w_queen = Figure("w_queen", [7, 3], 5, board)
+    w_queen = Figure("w_queen", [7, 3], board)
     figs.append(w_queen)
 
-    w_bishop1 = Figure("w_bishop_1", [7, 2], 4, board)
+    w_bishop1 = Figure("w_bishop_1", [7, 2], board)
     figs.append(w_bishop1)
 
-    w_bishop2 = Figure("w_bishop_2", [7, 5], 4, board)
+    w_bishop2 = Figure("w_bishop_2", [7, 5], board)
     figs.append(w_bishop2)
 
-    w_knight1 = Figure("w_knight_1", [7, 1], 4, board)
+    w_knight1 = Figure("w_knight_1", [7, 1], board)
     figs.append(w_knight1)
 
-    w_knight2 = Figure("w_knight_2", [7, 6], 4, board)
+    w_knight2 = Figure("w_knight_2", [7, 6], board)
     figs.append(w_knight2)
 
-    w_rook1 = Figure("w_rook_1", [7, 0], 4, board)
+    w_rook1 = Figure("w_rook_1", [7, 0], board)
     figs.append(w_rook1)
 
-    w_rook2 = Figure("w_rook_2", [7, 7], 4, board)
+    w_rook2 = Figure("w_rook_2", [7, 7], board)
     figs.append(w_rook2)
 
     # pawns row
-    w_pawn1 = Figure("w_pawn_1", [6, 0], 1, board)
+    w_pawn1 = Figure("w_pawn_1", [6, 0], board)
     figs.append(w_pawn1)
 
-    w_pawn2 = Figure("w_pawn_2", [6, 1], 1, board)
+    w_pawn2 = Figure("w_pawn_2", [6, 1], board)
     figs.append(w_pawn2)
 
-    w_pawn3 = Figure("w_pawn_3", [6, 2], 1, board)
+    w_pawn3 = Figure("w_pawn_3", [6, 2], board)
     figs.append(w_pawn3)
 
-    w_pawn4 = Figure("w_pawn_4", [6, 3], 1, board)
+    w_pawn4 = Figure("w_pawn_4", [6, 3], board)
     figs.append(w_pawn4)
 
-    w_pawn5 = Figure("w_pawn_5", [6, 4], 1, board)
+    w_pawn5 = Figure("w_pawn_5", [6, 4], board)
     figs.append(w_pawn5)
 
-    w_pawn6 = Figure("w_pawn_6", [6, 5], 1, board)
+    w_pawn6 = Figure("w_pawn_6", [6, 5], board)
     figs.append(w_pawn6)
 
-    w_pawn7 = Figure("w_pawn_7", [6, 6], 1, board)
+    w_pawn7 = Figure("w_pawn_7", [6, 6], board)
     figs.append(w_pawn7)
 
-    w_pawn8 = Figure("w_pawn_8", [6, 7], 1, board)
+    w_pawn8 = Figure("w_pawn_8", [6, 7], board)
     figs.append(w_pawn8)
 
     return figs
@@ -270,53 +319,53 @@ def make_white_figures(board):
 def make_black_figures(board):
     figs = []
     # first row
-    b_king = Figure("b_king", [0, 4], 6, board)
+    b_king = Figure("b_king", [0, 4], board)
     figs.append(b_king)
 
-    b_queen = Figure("b_queen", [0, 3], 5, board)
+    b_queen = Figure("b_queen", [0, 3], board)
     figs.append(b_queen)
 
-    b_bishop1 = Figure("b_bishop_1", [0, 2], 4, board)
+    b_bishop1 = Figure("b_bishop_1", [0, 2], board)
     figs.append(b_bishop1)
 
-    b_bishop2 = Figure("b_bishop_2", [0, 5], 4, board)
+    b_bishop2 = Figure("b_bishop_2", [0, 5], board)
     figs.append(b_bishop2)
 
-    b_knight1 = Figure("b_knight_1", [0, 1], 4, board)
+    b_knight1 = Figure("b_knight_1", [0, 1], board)
     figs.append(b_knight1)
 
-    b_knight2 = Figure("b_knight_2", [0, 6], 4, board)
+    b_knight2 = Figure("b_knight_2", [0, 6], board)
     figs.append(b_knight2)
 
-    b_rook1 = Figure("b_rook_1", [0, 0], 4, board)
+    b_rook1 = Figure("b_rook_1", [0, 0], board)
     figs.append(b_rook1)
 
-    b_rook2 = Figure("b_rook_2", [0, 7], 4, board)
+    b_rook2 = Figure("b_rook_2", [0, 7], board)
     figs.append(b_rook2)
 
     # pawns row
-    b_pawn1 = Figure("b_pawn_1", [1, 0], 1, board)
+    b_pawn1 = Figure("b_pawn_1", [1, 0], board)
     figs.append(b_pawn1)
 
-    b_pawn2 = Figure("b_pawn_2", [1, 1], 1, board)
+    b_pawn2 = Figure("b_pawn_2", [1, 1], board)
     figs.append(b_pawn2)
 
-    b_pawn3 = Figure("b_pawn_3", [1, 2], 1, board)
+    b_pawn3 = Figure("b_pawn_3", [1, 2], board)
     figs.append(b_pawn3)
 
-    b_pawn4 = Figure("b_pawn_4", [1, 3], 1, board)
+    b_pawn4 = Figure("b_pawn_4", [1, 3], board)
     figs.append(b_pawn4)
 
-    b_pawn5 = Figure("b_pawn_5", [1, 4], 1, board)
+    b_pawn5 = Figure("b_pawn_5", [1, 4], board)
     figs.append(b_pawn5)
 
-    b_pawn6 = Figure("b_pawn_6", [1, 5], 1, board)
+    b_pawn6 = Figure("b_pawn_6", [1, 5], board)
     figs.append(b_pawn6)
 
-    b_pawn7 = Figure("b_pawn_7", [1, 6], 1, board)
+    b_pawn7 = Figure("b_pawn_7", [1, 6], board)
     figs.append(b_pawn7)
 
-    b_pawn8 = Figure("b_pawn_8", [1, 7], 1, board)
+    b_pawn8 = Figure("b_pawn_8", [1, 7], board)
     figs.append(b_pawn8)
 
     return figs
@@ -335,6 +384,11 @@ def main():
         draw_board(board)
 
         w_figures[12].move(board)
+
+        # r_fig = random.randrange(0, 16)
+        # w_figures[r_fig].move(board)
+        # r_fig = random.randrange(0, 16)
+        # b_figures[r_fig].move(board)
 
         # keep at the end
         pg.display.flip()
