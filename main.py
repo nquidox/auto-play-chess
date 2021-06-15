@@ -2,12 +2,14 @@ import pygame as pg
 import random
 
 # window params & init
-WIDTH = 1000
-HEIGHT = 700
+WIDTH = 940
+HEIGHT = 660
 RES = WIDTH, HEIGHT
-TICK_RATE = 2
+TICK_RATE = 3
 
 pg.init()
+
+# main surface
 screen = pg.display.set_mode(RES)
 clock = pg.time.Clock()
 
@@ -15,9 +17,15 @@ clock = pg.time.Clock()
 colors = {"background": (62, 67, 72),
           "board_bg":   (142, 36, 38),
           "black":      (142, 36, 38),
-          "white":      (255, 251, 219)}
+          "white":      (255, 251, 219),
+          "dark_gray":  (40, 40, 40)}
+
+# kill feeds
+whites = []
+blacks = []
 
 # interface builds from this number, default value is 64
+# no auto-resize and auto-center for figures (and window), change this at your own risk
 square_size = 64
 
 # borders
@@ -30,6 +38,7 @@ inner_size = board_size + ib * 2
 text_area_size = inner_size + ta * 2
 outer_size = text_area_size + ob * 2
 
+# figures "prices"
 values = {"king": 9, "queen": 7, "bishop": 2, "knight": 2, "rook": 2, "pawn": 1}
 
 
@@ -110,9 +119,11 @@ class Figure(object):
             if item[1] >= highest:
                 new_list.append(item[0])
 
+        print(new_list)
+
         quant = len(threat_list)
         if quant > 1:
-            rand = random.randrange(0, quant - 1)
+            rand = random.randrange(0, quant)
             return new_list[rand]
 
         else:
@@ -167,7 +178,7 @@ def draw_board(board):
                          rect=(board[i][0] * square_size, board[i][1] * square_size, square_size, square_size))
 
     # letters
-    font = pg.font.SysFont("SourceCodePro-SemiBold.ttf", int(square_size * 0.4))
+    font = pg.font.SysFont("Arial-black", int(square_size * 0.4))
 
     letters = ("A", "B", "C", "D", "E", "F", "G", "H")
     letters_start_x = ob + ta * 1.5 + ib + square_size / 2
@@ -259,6 +270,39 @@ def draw_board(board):
 
         img = pg.image.load(link)
         screen.blit(img, pos)
+
+
+def draw_kill_feed():
+    # grid size of kill feed should have space for 16 figures, basic size is 4x4
+    row = square_size * 4
+    line = square_size * 4
+    font_size = int(square_size * 0.25)
+
+    font = pg.font.SysFont("Arial", font_size)
+    whites_taken = "White figures taken:"
+    blacks_taken = "Black figures taken:"
+
+    w_text = font.render(whites_taken, True, (colors["white"]))
+    b_text = font.render(blacks_taken, True, (colors["white"]))
+
+    # render text
+    screen.blit(w_text, (s_pos * 3 + outer_size, s_pos))
+    screen.blit(b_text, (s_pos * 3 + outer_size, s_pos * 3 + row))
+
+    # render surfaces
+    border = pg.Surface((row + ob * 2, line + ob * 2))
+    border.fill(colors["black"])
+
+    inner_field = pg.Surface((row, line))
+    inner_field.fill(colors["dark_gray"])
+
+    # kill feed for whites
+    border.blit(inner_field, (ob, ob))
+    screen.blit(border, (s_pos * 3 + outer_size, s_pos * 2))
+
+    # kill feed for blacks
+    border.blit(inner_field, (ob, ob))
+    screen.blit(border, (s_pos * 3 + outer_size, s_pos * 3 + font_size * 1.2 + row))
 
 
 def make_white_figures(board):
@@ -381,18 +425,38 @@ def main():
 
     while True:
         [exit() for i in pg.event.get() if i.type == pg.QUIT]
+
+        # draw surfaces every tick
         draw_board(board)
+        draw_kill_feed()
 
-        w_figures[12].move(board)
+        # pawns are 8 - 15
+        # w_figures[9].move(board)
 
-        # r_fig = random.randrange(0, 16)
+        # r_fig = random.randrange(8, 16)
         # w_figures[r_fig].move(board)
-        # r_fig = random.randrange(0, 16)
+        # r_fig = random.randrange(8, 16)
         # b_figures[r_fig].move(board)
+
+        # press space for manual moves
+        # override TICK_RATE to 200
+        TICK_RATE = 200
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                exit()
+
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_SPACE:
+                    rand_w = random.randrange(8, 16)
+                    rand_b = random.randrange(8, 16)
+                    w_figures[rand_w].move(board)
+                    b_figures[rand_b].move(board)
+
 
         # keep at the end
         pg.display.flip()
         clock.tick(TICK_RATE)
+
 
 
 if __name__ == '__main__':
